@@ -21,21 +21,21 @@ def overlay_emoji(img_ori, x1, y1, x2, y2, pred):
     }
 
     # Default emoji image for neutral emotion
-    imageText = "others/neutral.png"
+    imageText = "images/neutral.png"
 
     # Update the emoji image based on the predicted emotion
     if pred == "happiness":
-        imageText = "others/happy.png"
+        imageText = "images/happy.png"
     elif pred == "surprise":
-        imageText = "others/surprise.png"
+        imageText = "images/surprise.png"
     elif pred == "sadness":
-        imageText = "others/sadness.png"
+        imageText = "images/sadness.png"
     elif pred == "anger":
-        imageText = "others/anger.png"
+        imageText = "images/anger.png"
     elif pred == "disgust":
-        imageText = "others/disgust.png"
+        imageText = "images/disgust.png"
     elif pred == "fear":
-        imageText = "others/fear.png"
+        imageText = "images/fear.png"
 
     # Read the emoji image with alpha channel (transparency)
     emotion_image = cv2.imread(imageText, cv2.IMREAD_UNCHANGED)
@@ -63,7 +63,7 @@ def overlay_emoji(img_ori, x1, y1, x2, y2, pred):
         img_ori[y1:y2, x1:x2] = blended_img
     except:
         # Handle any potential errors during overlay
-        print("error")
+        pass
 
 # Function to perform live emotion detection from webcam
 def emoji_cam():
@@ -85,16 +85,13 @@ def emoji_cam():
     frame_width = int(cap.get(3))
     frame_height = int(cap.get(4))
     size = (frame_width, frame_height)
-    result = cv2.VideoWriter('others/infer2-test.avi', 
-                             cv2.VideoWriter_fourcc(*'MJPG'),
-                             10, size)
 
     # Read pre-trained emotion recognition model
-    model = cv2.dnn.readNetFromONNX('others/emotion-ferplus-8.onnx')
+    model = cv2.dnn.readNetFromONNX('models/emotion-ferplus-8.onnx')
     
     # Read the Caffe face detector model
-    model_path = 'RFB-320/RFB-320.caffemodel'
-    proto_path = 'RFB-320/RFB-320.prototxt'
+    model_path = 'models/RFB-320.caffemodel'
+    proto_path = 'models/RFB-320.prototxt'
     net = dnn.readNetFromCaffe(proto_path, model_path)
     input_size = [320, 240]
     width = input_size[0]
@@ -152,9 +149,6 @@ def emoji_cam():
 
                 # Overlay emoji on the original frame
                 overlay_emoji(img_ori, x1, y1, x2, y2, pred)
-
-                # Write the frame with overlay to the video output
-                result.write(frame)
         
             # Display the frame with overlay
             cv2.imshow('frame', frame)
@@ -167,5 +161,4 @@ def emoji_cam():
 
     # Release video capture and writer resources
     cap.release()
-    result.release()
     cv2.destroyAllWindows()

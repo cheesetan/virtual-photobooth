@@ -49,7 +49,7 @@ def generate_priors(feature_map_list, shrinkage_list, image_size, min_boxes):
                         w,
                         h
                     ])
-    print("priors nums:{}".format(len(priors)))
+    # print("priors nums:{}".format(len(priors)))
     return np.clip(priors, 0.0, 1.0)
 
 # Function for Hard Non-Maximum Suppression
