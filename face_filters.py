@@ -1,26 +1,30 @@
 import cv2
 import dlib
 import numpy as np
+from enum import Enum
+import global_variables
+
+class FacePosition(Enum):
+	EYES = 27
+	NOSE = 33
+	HEAD = 23
 
 # Load the pre-trained face detector and landmark predictor
 face_detector = dlib.get_frontal_face_detector()
 landmark_predictor = dlib.shape_predictor("models/shape_predictor_68_face_landmarks.dat")
 
-# Load the glasses image with an alpha channel (transparency)
-glasses_img = cv2.imread("images/glasses.png", -1)
-
 # Function to overlay glasses on the face
-def overlay_glasses(frame, landmarks):
+def overlay_eyes(image, frame, landmarks, position):
 	# Calculate the position of the glasses
 	glasses_width = int(np.linalg.norm(landmarks[36] - landmarks[45]) * 1.5)
-	glasses_height = int(glasses_width * (glasses_img.shape[0] / glasses_img.shape[1]))
+	glasses_height = int(glasses_width * (image.shape[0] / image.shape[1]))
 
 	# Resize the glasses image to match the calculated size
-	glasses_resized = cv2.resize(glasses_img, (glasses_width, glasses_height))
+	glasses_resized = cv2.resize(image, (glasses_width, glasses_height))
 
 	# Calculate the position to center the glasses
-	x_offset = int(landmarks[27, 0] - glasses_width / 2)
-	y_offset = int(landmarks[27, 1] - glasses_height / 2) + 10
+	x_offset = int(landmarks[position.value, 0] - glasses_width / 2)
+	y_offset = int(landmarks[position.value, 1] - glasses_height / 2) + 10
 
 	# Clip the overlay region to stay within the frame boundaries
 	x1, x2 = max(x_offset, 0), min(x_offset + glasses_width, frame.shape[1])
@@ -56,8 +60,16 @@ def face_filter_cam():
 			# Convert landmarks to NumPy array for easier indexing
 			landmarks_np = np.array([(landmarks.part(i).x, landmarks.part(i).y) for i in range(68)])
 
-			# Overlay the glasses on the face
-			overlay_glasses(frame, landmarks_np)
+			# Load the glasses image with an alpha channel (transparency)
+			mustache_img = cv2.imread("images/moustache.png", -1)
+			glasses_img = cv2.imread("images/glasses.png", -1)
+	
+			# Overlay the filters on the face
+			for filter in global_variables.filters_chosen:
+				if filter == global_variables.Filters.GLASSES:
+					overlay_eyes(glasses_img, frame, landmarks_np, FacePosition.EYES)
+				elif filter == global_variables.Filters.MOUSTACHE:
+					overlay_eyes(mustache_img, frame, landmarks_np, FacePosition.NOSE)
 
 		# Display the frame with the overlay
 		cv2.imshow("Glasses Filter", frame)
