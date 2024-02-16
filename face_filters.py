@@ -37,8 +37,8 @@ def overlay_eyes(image, frame, landmarks, position):
 	y_offset = int(landmarks[position.value, 1] - glasses_height / 2) + 10
 
 	# Clip the overlay region to stay within the frame boundaries
-	x1, x2 = max(x_offset, 0) + 100, min(x_offset + glasses_width, frame.shape[1])
-	y1, y2 = max(y_offset, 0) + 100, min(y_offset + glasses_height, frame.shape[0])
+	x1, x2 = max(x_offset, 0), min(x_offset + glasses_width, frame.shape[1])
+	y1, y2 = max(y_offset, 0), min(y_offset + glasses_height, frame.shape[0])
 
 	# Rotate the glasses to match the angle between landmarks[36] and landmarks[45]
 	# center = (int(landmarks[position.value, 0]), int(landmarks[position.value, 1]))
