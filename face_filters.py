@@ -7,7 +7,6 @@ import global_variables
 class FacePosition(Enum):
 	EYES = 27
 	NOSE = 33
-	HEAD = 23
 
 # Load the pre-trained face detector and landmark predictor
 face_detector = dlib.get_frontal_face_detector()
@@ -15,7 +14,7 @@ landmark_predictor = dlib.shape_predictor("models/shape_predictor_68_face_landma
 
 # Function to overlay glasses on the face
 # Tristan did the resizing, Klfton did the rotation to match angle head it tilted at
-def overlay_eyes(image, frame, landmarks, position):
+def overlay(image, frame, landmarks, position):
 	# Calculate the position of the glasses
 	glasses_width = int(np.linalg.norm(landmarks[36] - landmarks[45]) * 1.5)
 	glasses_height = int(glasses_width * (image.shape[0] / image.shape[1]))
@@ -54,11 +53,14 @@ def overlay_eyes(image, frame, landmarks, position):
 		if x1 < x2 and y1 < y2:
 			frame[y1:y2, x1:x2, :3] = (alpha_channel[:, :, np.newaxis] * rotated_overlay[:, :, :3] + alpha_frame[:, :, np.newaxis] * frame[y1:y2, x1:x2, :3])
 		else: 
-			print("There was an unexpected error")
+			# print("There was an unexpected error")
+			pass
 	except IndexError as e:
-		print("IndexError: {}".format(e))
+		# print("IndexError: {}".format(e))
+		pass
 	except Exception as ex:
-		print("An unexpected error occurred: {}".format(ex))
+		# print("An unexpected error occurred: {}".format(ex))
+		pass
 		
 
 def face_filter_cam():
@@ -83,14 +85,23 @@ def face_filter_cam():
 
 			# Load the glasses image with an alpha channel (transparency)
 			mustache_img = cv2.imread("images/moustache.png", -1)
-			glasses_img = cv2.imread("images/glasses.png", -1)
+			red_glasses_img = cv2.imread("images/red_glasses.png", -1)
+			blue_glasses_img = cv2.imread("images/blue_glasses.png", -1)
+			gray_glasses_img = cv2.imread("images/gray_glasses.png", -1)
+			party_glasses_img = cv2.imread("images/party_glasses.png", -1)
 	
 			# Overlay the filters on the face
 			for filter in global_variables.filters_chosen:
-				if filter == global_variables.Filters.GLASSES:
-					overlay_eyes(glasses_img, frame, landmarks_np, FacePosition.EYES)
+				if filter == global_variables.Filters.REDGLASSES:
+					overlay(red_glasses_img, frame, landmarks_np, FacePosition.EYES)
+				elif filter == global_variables.Filters.BLUEGLASSES:
+					overlay(blue_glasses_img, frame, landmarks_np, FacePosition.EYES)
+				elif filter == global_variables.Filters.GRAYGLASSES:
+					overlay(gray_glasses_img, frame, landmarks_np, FacePosition.EYES)
 				elif filter == global_variables.Filters.MOUSTACHE:
-					overlay_eyes(mustache_img, frame, landmarks_np, FacePosition.NOSE)
+					overlay(mustache_img, frame, landmarks_np, FacePosition.NOSE)
+				elif filter == global_variables.Filters.PARTYGLASSES:
+					overlay(party_glasses_img, frame, landmarks_np, FacePosition.EYES)
 
 		# Display the frame with the overlay
 		cv2.imshow("Glasses Filter", frame)
