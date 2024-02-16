@@ -14,6 +14,7 @@ face_detector = dlib.get_frontal_face_detector()
 landmark_predictor = dlib.shape_predictor("models/shape_predictor_68_face_landmarks.dat")
 
 # Function to overlay glasses on the face
+# Tristan did the resizing, Klfton did the rotation to match angle head it tilted at
 def overlay_eyes(image, frame, landmarks, position):
 	# Calculate the position of the glasses
 	glasses_width = int(np.linalg.norm(landmarks[36] - landmarks[45]) * 1.5)
@@ -22,23 +23,43 @@ def overlay_eyes(image, frame, landmarks, position):
 	# Resize the glasses image to match the calculated size
 	glasses_resized = cv2.resize(image, (glasses_width, glasses_height))
 
+	# Calculate the angle between landmarks[36] and landmarks[45] in radians
+	angle_radians = -1 * np.arctan2(landmarks[45][1] - landmarks[36][1], landmarks[45][0] - landmarks[36][0])
+
+	# Convert the angle from radians to degrees
+	angle_degrees = np.degrees(angle_radians)
+
+	# Calculate the center of the glasses
+	glasses_center = (glasses_width // 2, glasses_height // 2)
+
 	# Calculate the position to center the glasses
 	x_offset = int(landmarks[position.value, 0] - glasses_width / 2)
 	y_offset = int(landmarks[position.value, 1] - glasses_height / 2) + 10
 
 	# Clip the overlay region to stay within the frame boundaries
-	x1, x2 = max(x_offset, 0), min(x_offset + glasses_width, frame.shape[1])
-	y1, y2 = max(y_offset, 0), min(y_offset + glasses_height, frame.shape[0])
+	x1, x2 = max(x_offset, 0) + 100, min(x_offset + glasses_width, frame.shape[1])
+	y1, y2 = max(y_offset, 0) + 100, min(y_offset + glasses_height, frame.shape[0])
+
+	# Rotate the glasses to match the angle between landmarks[36] and landmarks[45]
+	# center = (int(landmarks[position.value, 0]), int(landmarks[position.value, 1]))
+	rotation_matrix = cv2.getRotationMatrix2D(glasses_center, angle_degrees, 1.0)
+	rotated_overlay = cv2.warpAffine(glasses_resized, rotation_matrix, (glasses_width, glasses_height))
 
 	# Calculate the alpha values for blending
-	alpha_glasses = glasses_resized[:, :, 3] / 255.0
-	alpha_frame = 1.0 - alpha_glasses
+	alpha_channel = rotated_overlay[:, :, 3] / 255.0
+	alpha_frame = 1.0 - alpha_channel
 
 	# Overlay the glasses on the frame
 	try:
-		frame[y1:y2, x1:x2, :3] = (alpha_glasses[:, :, np.newaxis] * glasses_resized[:, :, :3] + alpha_frame[:, :, np.newaxis] * frame[y1:y2, x1:x2, :3])
-	except:
-		pass
+		if x1 < x2 and y1 < y2:
+			frame[y1:y2, x1:x2, :3] = (alpha_channel[:, :, np.newaxis] * rotated_overlay[:, :, :3] + alpha_frame[:, :, np.newaxis] * frame[y1:y2, x1:x2, :3])
+		else: 
+			print("There was an unexpected error")
+	except IndexError as e:
+		print("IndexError: {}".format(e))
+	except Exception as ex:
+		print("An unexpected error occurred: {}".format(ex))
+		
 
 def face_filter_cam():
 	# Open the webcam
